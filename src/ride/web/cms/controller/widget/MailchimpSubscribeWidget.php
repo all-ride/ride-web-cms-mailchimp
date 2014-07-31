@@ -86,7 +86,7 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
         }
 
         $this->setTemplateView(self::TEMPLATE, array(
-            'title' => $this->properties->getWidgetProperty('title'),
+            'title' => $this->properties->getWidgetProperty('title.' . $this->locale),
             'form' => $form->getView(),
         ));
     }
@@ -100,7 +100,7 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
 
         $preview = '';
 
-        $title = $this->properties->getWidgetProperty('title');
+        $title = $this->properties->getWidgetProperty('title.' . $this->locale);
         if ($title) {
             $preview .= '<strong>' . $translator->translate('label.title') .'</strong> ' . $title. '<br/>';
         }
@@ -126,7 +126,7 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
         $translator = $this->getTranslator();
 
         $data = array(
-            'title' => $this->properties->getWidgetProperty('title'),
+            'title' => $this->properties->getWidgetProperty('title.' . $this->locale),
             'apikey' => $this->properties->getWidgetProperty('apikey'),
             'listid' => $this->properties->getWidgetProperty('listid'),
         );
@@ -155,7 +155,7 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
 
                 $data = $form->getData();
 
-                $this->properties->setWidgetProperty('title', $data['title']);
+                $this->properties->setWidgetProperty('title.' . $this->locale, $data['title']);
                 $this->properties->setWidgetProperty('apikey', $data['apikey']);
                 $this->properties->setWidgetProperty('listid', $data['listid']);
 
