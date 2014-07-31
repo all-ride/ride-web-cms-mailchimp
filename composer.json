@@ -2,7 +2,7 @@
     "name": "ride/web-cms-mailchimp",
     "description": "MailChimp integration for the CMS application of the Ride framework",
     "license": "MIT",
-    "version": "0.1.4",
+    "version": "0.1.5",
     "authors": [
         {
             "name": "Kristof Serré",
