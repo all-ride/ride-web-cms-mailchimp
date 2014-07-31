@@ -10,7 +10,7 @@ use \Mailchimp;
 /**
  * Newsletter form for Seforis homepage
  */
-class MailchimpSubscribeWidget extends AbstractWidget {
+class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
 
     /**
      * Machine name for this widget
@@ -86,6 +86,7 @@ class MailchimpSubscribeWidget extends AbstractWidget {
         }
 
         $this->setTemplateView(self::TEMPLATE, array(
+            'title' => $this->properties->getWidgetProperty('title'),
             'form' => $form->getView(),
         ));
     }
@@ -98,6 +99,11 @@ class MailchimpSubscribeWidget extends AbstractWidget {
         $translator = $this->getTranslator();
 
         $preview = '';
+
+        $title = $this->properties->getWidgetProperty('title');
+        if ($title) {
+            $preview .= '<strong>' . $translator->translate('label.title') .'</strong> ' . $title. '<br/>';
+        }
 
         $apiKey = $this->properties->getWidgetProperty('apikey');
         if ($apikey) {
@@ -120,15 +126,18 @@ class MailchimpSubscribeWidget extends AbstractWidget {
         $translator = $this->getTranslator();
 
         $data = array(
+            'title' => $this->properties->getWidgetProperty('title'),
             'apikey' => $this->properties->getWidgetProperty('apikey'),
             'listid' => $this->properties->getWidgetProperty('listid'),
         );
 
         $form = $this->createFormBuilder($data);
+        $form->addRow('title', 'string', array(
+           'label' => $translator->translate('label.title'),
+        ));
         $form->addRow('apikey', 'string', array(
            'label' => $translator->translate('label.key.api'),
            'description' => $translator->translate('label.key.api.mailchimp.description')
-
         ));
         $form->addRow('listid', 'string', array(
             'label' => $translator->translate('label.id.list'),
@@ -146,7 +155,8 @@ class MailchimpSubscribeWidget extends AbstractWidget {
 
                 $data = $form->getData();
 
-                $this->properties->setWidgetProperty('apikey', $data['api-key']);
+                $this->properties->setWidgetProperty('title', $data['title']);
+                $this->properties->setWidgetProperty('apikey', $data['apikey']);
                 $this->properties->setWidgetProperty('listid', $data['listid']);
 
                 return true;
@@ -159,4 +169,17 @@ class MailchimpSubscribeWidget extends AbstractWidget {
             'form' => $form->getView(),
         ));
     }
+
+    /**
+     * Gets the options for the styles
+     * @return array Array with the name of the option as key and the
+     * translation key as value
+     */
+    public function getWidgetStyleOptions() {
+        return array(
+            'container' => 'label.widget.style.container',
+            'title' => 'label.widget.style.title',
+        );
+    }
+
 }
