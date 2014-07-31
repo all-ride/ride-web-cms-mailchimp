@@ -106,7 +106,7 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
         }
 
         $apiKey = $this->properties->getWidgetProperty('apikey');
-        if ($apikey) {
+        if ($apiKey) {
             $preview .= '<strong>' . $translator->translate('label.key.api') .'</strong> ' . $apiKey . '<br/>';
         }
 
