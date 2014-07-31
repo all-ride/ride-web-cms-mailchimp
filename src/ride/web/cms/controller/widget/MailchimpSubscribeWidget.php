@@ -19,6 +19,12 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
     const NAME  = 'mailchimp.subscribe';
 
     /**
+     * Path to the icon of this widget
+     * @var string
+     */
+    const ICON  = 'img/cms/widget/mailchimp.subscribe.png';
+
+    /**
      * Template resource for this widget
      * @var string
      */
