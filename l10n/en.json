@@ -1,0 +1,13 @@
+{
+    "button.subscribe": "Subscribe",
+    "error.mailchimp.subscribe.general": "Could not subscribe to the mailinglist: %error%",
+    "error.mailchimp.subscribe.unknown": "Could not subscribe to the mailinglist: an unknown error occured.",
+    "label.email.your": "Your email address",
+    "label.key.api": "API key",
+    "label.key.api.mailchimp.description": "API key of your MailChimp account",
+    "label.id.list": "List ID",
+    "label.id.list": "Id of the list to subscribe to",
+    "success.mailchimp.subscribe": "Thank you, you are now subscribed to our mailinglist.",
+    "warning.mailchimp.email.exists": "Your email address is already subscribed",
+    "widget.mailchimp.subscribe": "Mailchimp Subscribe"
+}

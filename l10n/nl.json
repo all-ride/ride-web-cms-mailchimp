@@ -1,0 +1,13 @@
+{
+    "button.subscribe": "Inschrijven",
+    "error.mailchimp.subscribe.general": "Je kon niet op de mailinglist ingeschreven worden: %error%",
+    "error.mailchimp.subscribe.unknown": "Door een onbekende fout kon je niet op de mailinglist ingeschreven worden.",
+    "label.email.your": "Je e-mailadres",
+    "label.key.api": "API sleutel",
+    "label.key.api.mailchimp.description": "API sleutel van je MailChimp account",
+    "label.id.list": "List ID",
+    "label.id.list": "Id van de lijst waarop ingeschreven wordt",
+    "success.mailchimp.subscribe": "Bedankt, je bent nu ingeschreven op onze mailinglist.",
+    "warning.mailchimp.email.exists": "Je e-mailadres werd reeds ingeschreven op onze mailinglist.",
+    "widget.mailchimp.subscribe": "Mailchimp Inschrijving"
+}
