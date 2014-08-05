@@ -41,11 +41,13 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
             return;
         }
 
+        $translator = $this->getTranslator();
+
         $form = $this->createFormBuilder();
         $form->addRow('email', 'email', array(
             'label' => "",
             'attributes' => array(
-                'placeholder' => $this->getTranslator()->translate('label.email.your'),
+                'placeholder' => $translator->translate('label.email.your'),
             ),
             'validators' => array(
                 'required' => array()
@@ -67,7 +69,7 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
                     $code = $response['errors']['0']['code'];
                     switch ($code) {
                         case 230:
-                            $this->addError($translator->translate('warning.mailchimp.email.exists'));
+                            $this->addError('warning.mailchimp.email.exists');
 
                             break;
                         case 231:
@@ -75,16 +77,16 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
                         case 233:
                             $mailchimp->lists->subscribe($listId, $email, null, 'html', false, true, false, $code == 232);
 
-                            $this->addSuccess($translator->translate('success.mailchimp.subscribe'));
+                            $this->addSuccess('success.mailchimp.subscribe');
 
                             break;
                         default:
-                            $this->addWarning($translator->translate('error.mailchimp.subscribe.general', array('error' => $response['errors']['0']['message'])));
+                            $this->addWarning('error.mailchimp.subscribe.general', array('error' => $response['errors']['0']['message'])));
 
                             break;
                     }
                 } else {
-                    $this->addError($translator->translate('error.mailchimp.subscribe.unknown'));
+                    $this->addError('error.mailchimp.subscribe.unknown');
                 }
             } catch (ValidationException $exception) {
                 $this->setValidationException($exception, $form);
