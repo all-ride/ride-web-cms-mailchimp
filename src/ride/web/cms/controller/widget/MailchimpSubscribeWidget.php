@@ -81,7 +81,7 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
 
                             break;
                         default:
-                            $this->addWarning('error.mailchimp.subscribe.general', array('error' => $response['errors']['0']['message'])));
+                            $this->addWarning('error.mailchimp.subscribe.general', array('error' => $response['errors']['0']['message']));
 
                             break;
                     }
