@@ -28,7 +28,7 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
      * Template resource for this widget
      * @var string
      */
-    const TEMPLATE = 'cms/widget/mailchimp/subscribe';
+    const TEMPLATE_NAMESPACE = 'cms/widget/mailchimp';
 
     /**
      * Action to show and handle the subscribe form
@@ -93,7 +93,7 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
             }
         }
 
-        $this->setTemplateView(self::TEMPLATE, array(
+        $this->setTemplateView($this->getTemplate(static::TEMPLATE_NAMESPACE . '/index'), array(
             'title' => $this->properties->getWidgetProperty('title.' . $this->locale),
             'form' => $form->getView(),
         ));
@@ -137,6 +137,7 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
             'title' => $this->properties->getWidgetProperty('title.' . $this->locale),
             'apikey' => $this->properties->getWidgetProperty('apikey'),
             'listid' => $this->properties->getWidgetProperty('listid'),
+            self::PROPERTY_TEMPLATE => $this->getTemplate(static::TEMPLATE_NAMESPACE . '/index'),
         );
 
         $form = $this->createFormBuilder($data);
@@ -150,6 +151,13 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
         $form->addRow('listid', 'string', array(
             'label' => $translator->translate('label.id.list'),
             'description' => $translator->translate('label.id.list.mailchimp.description')
+        ));
+        $form->addRow(self::PROPERTY_TEMPLATE, 'select', array(
+            'label' => $translator->translate('label.template'),
+            'options' => $this->getAvailableTemplates(static::TEMPLATE_NAMESPACE),
+            'validators' => array(
+                'required' => array(),
+            ),
         ));
         $form = $form->build();
 
@@ -167,13 +175,15 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
                 $this->properties->setWidgetProperty('apikey', $data['apikey']);
                 $this->properties->setWidgetProperty('listid', $data['listid']);
 
+                $this->setTemplate($data[self::PROPERTY_TEMPLATE]);
+
                 return true;
             } catch (ValidationException $exception) {
                 $this->setValidationException($exception, $form);
             }
         }
 
-        $this->setTemplateView('cms/widget/mailchimp/properties', array(
+        $this->setTemplateView(static::TEMPLATE_NAMESPACE . '/properties', array(
             'form' => $form->getView(),
         ));
     }
