@@ -195,8 +195,8 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
      */
     public function getWidgetStyleOptions() {
         return array(
-            'container' => 'label.widget.style.container',
-            'title' => 'label.widget.style.title',
+            'container' => 'label.style.container',
+            'title' => 'label.style.title',
         );
     }
 
