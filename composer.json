@@ -2,7 +2,7 @@
     "name": "ride/web-cms-mailchimp",
     "description": "MailChimp integration for the CMS application of the Ride framework",
     "license": "MIT",
-    "version": "0.2.0",
+    "version": "0.2.1",
     "authors": [
         {
             "name": "Kristof Serré",
@@ -14,13 +14,13 @@
         }
     ],
     "require": {
-        "ride/lib-cms": ">=0.10.14",
+        "ride/lib-cms": ">=0.15.0",
         "ride/lib-common": ">=0.4.0",
         "ride/lib-form": ">=0.7.2",
         "ride/lib-i18n": ">=0.1.0",
         "ride/lib-validation": ">=0.1.0",
         "ride/lib-widget": ">=0.1.1",
-        "ride/web-cms": ">=0.13.0",
+        "ride/web-cms": ">=0.16.0",
         "mailchimp/mailchimp": "*"
     },
     "autoload": {

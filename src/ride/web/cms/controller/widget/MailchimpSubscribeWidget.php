@@ -93,7 +93,7 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
             }
         }
 
-        $this->setTemplateView($this->getTemplate(static::TEMPLATE_NAMESPACE . '/index'), array(
+        $this->setTemplateView($this->getTemplate(static::TEMPLATE_NAMESPACE . '/default'), array(
             'title' => $this->properties->getWidgetProperty('title.' . $this->locale),
             'form' => $form->getView(),
         ));
@@ -137,7 +137,7 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
             'title' => $this->properties->getWidgetProperty('title.' . $this->locale),
             'apikey' => $this->properties->getWidgetProperty('apikey'),
             'listid' => $this->properties->getWidgetProperty('listid'),
-            self::PROPERTY_TEMPLATE => $this->getTemplate(static::TEMPLATE_NAMESPACE . '/index'),
+            self::PROPERTY_TEMPLATE => $this->getTemplate(static::TEMPLATE_NAMESPACE . '/default'),
         );
 
         $form = $this->createFormBuilder($data);
@@ -195,8 +195,8 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
      */
     public function getWidgetStyleOptions() {
         return array(
-            'container' => 'label.widget.style.container',
-            'title' => 'label.widget.style.title',
+            'container' => 'label.style.container',
+            'title' => 'label.style.title',
         );
     }
 
