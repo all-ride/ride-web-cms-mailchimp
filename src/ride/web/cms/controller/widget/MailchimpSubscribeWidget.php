@@ -262,6 +262,7 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
                 unset($data['apikey']);
                 unset($data['listid']);
                 unset($data[self::PROPERTY_TEMPLATE]);
+                unset($data['finishNode']);
                 unset($data['EMAIL']);
 
                 foreach ($data as $key => $var) {
