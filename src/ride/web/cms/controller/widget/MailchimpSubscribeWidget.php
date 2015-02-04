@@ -41,30 +41,69 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
             return;
         }
 
+        $parameters = $this->request->getQueryParameters();
         $translator = $this->getTranslator();
+        $mailchimp = new Mailchimp($apiKey);
 
-        $form = $this->createFormBuilder();
-        $form->addRow('email', 'email', array(
-            'label' => "",
-            'attributes' => array(
-                'placeholder' => $translator->translate('label.email.your'),
-            ),
-            'validators' => array(
-                'required' => array()
-            )
-        ));
+        $fields = $this->getListVariables($mailchimp, $listId);
+        $field_typeMapper = array(
+            'email' => 'email',
+            'text' => 'string',
+            'date' => 'date',
+        );
+
+        $form = $this->createFormBuilder($parameters);
+
+        foreach ($fields as $field) {
+            if ($field['show']) {
+                if ($field['field_type'] == 'text' || $field['field_type'] == 'email') {
+                    $attr = array(
+                        'label' => $translator->translate('label.mailchimp.' . strtolower($field['name'])),
+                    );
+                    if (isset($parameters[$field['tag']])) {
+
+                        $attr['value'] = $parameters[$field['tag']];
+                    }
+                    if ($field['req']) {
+                        $attr['validators'] = array(
+                            'required' => array()
+                        );
+                    }
+                    $field_type = $field_typeMapper[$field['field_type']];
+
+                    $form->addRow($field['tag'], $field_type, $attr);
+
+                }
+            }
+        }
+
         $form = $form->build();
 
         if ($form->isSubmitted()) {
             try {
+
                 $form->validate();
 
                 $data = $form->getData();
-                $email = array('email' => $data['email']);
+                $email = array('email' => $data['EMAIL']);
+                unset($data['email']);
 
-                $mailchimp = new Mailchimp($apiKey);
+                $variables = null;
+                if($data) {
+                    $variables = array();
+                    foreach ($data as $key => $parameter) {
+                        $variable = [];
+                        $variable[$key] = $parameter;
+
+                        $variables[$key] = $parameter;
+                    }
+
+                    $variables = array('merge_vars' => $variables);
+                }
+
 
                 $response = $mailchimp->lists->memberInfo($listId, array($email));
+
                 if (isset($response['errors']['0']['code'])) {
                     $code = $response['errors']['0']['code'];
                     switch ($code) {
@@ -75,9 +114,23 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
                         case 231:
                         case 232:
                         case 233:
-                            $mailchimp->lists->subscribe($listId, $email, null, 'html', false, true, false, $code == 232);
+                            $mailchimp->lists->subscribe($listId, $email, $variables['merge_vars'], 'html', false, true, false, $code == 232);
 
-                            $this->addSuccess('success.mailchimp.subscribe');
+                            $finish = $this->properties->getWidgetProperty('finish.node');
+                            if ($finish) {
+                                $url = $this->getUrl('cms.front.' . $this->properties->getNode()->getRootNodeId() . '.' . $finish . '.' . $this->locale);
+                            } else {
+
+                                $filterUrl = str_replace('?' . $this->request->getQueryParametersAsString(), '', $this->request->getUrl());
+                                $url = $filterUrl;
+
+                                $this->addSuccess('success.mailchimp.subscribe');
+                                $parameters = null;
+                            }
+
+                            $this->response->setRedirect($url);
+
+                            return;
 
                             break;
                         default:
@@ -96,6 +149,7 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
         $this->setTemplateView($this->getTemplate(static::TEMPLATE_NAMESPACE . '/default'), array(
             'title' => $this->properties->getWidgetProperty('title.' . $this->locale),
             'form' => $form->getView(),
+            'parameters' => $parameters
         ));
     }
 
@@ -130,18 +184,22 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
      * Action to setup the properties of this widget
      * @return null
      */
-    public function propertiesAction() {
+    public function propertiesAction(NodeModel $nodeModel) {
         $translator = $this->getTranslator();
 
-        $data = array(
-            'title' => $this->properties->getWidgetProperty('title.' . $this->locale),
-            'apikey' => $this->properties->getWidgetProperty('apikey'),
-            'listid' => $this->properties->getWidgetProperty('listid'),
-            self::PROPERTY_TEMPLATE => $this->getTemplate(static::TEMPLATE_NAMESPACE . '/default'),
-        );
+        if ($this->properties->getWidgetProperty('apikey') && $this->properties->getWidgetProperty('listid')) {
+            $apiKey = $this->properties->getWidgetProperty('apikey');
+            $listId = $this->properties->getWidgetProperty('listid');
+            $mailChimp = new Mailchimp($apiKey);
+
+            $list_vars = $mailChimp->lists->mergeVars(array($listId));
+            $list_vars = $list_vars['data'][0]['merge_vars'];
+        }
+
+        $data = $this->properties->getWidgetProperties();
 
         $form = $this->createFormBuilder($data);
-        $form->addRow('title', 'string', array(
+        $form->addRow('title.'.$this->locale, 'string', array(
            'label' => $translator->translate('label.title'),
         ));
         $form->addRow('apikey', 'string', array(
@@ -159,6 +217,29 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
                 'required' => array(),
             ),
         ));
+        $form->addRow('finishNode', 'select', array(
+                    'label' => $translator->translate('label.node.finish'),
+                    'description' => $translator->translate('label.node.finish.description'),
+                    'options' => $this->getNodeList($nodeModel),
+                ));
+
+        foreach ($list_vars as $var) {
+            $show = $var['show'];
+            $required = $var['req'];
+            $attributes = null;
+            if ($required) {
+                $attributes = array(
+                    'disabled' => true
+                );
+            }
+            $form->addRow($var['tag'], 'boolean', array(
+               'label' =>  $var['tag'].(' (tag)'),
+               'description' => $translator->translate('label.mailchimp.description.field'),
+               'default' => $show,
+               'attributes' => $attributes
+            ));
+        }
+
         $form = $form->build();
 
         if ($form->isSubmitted()) {
@@ -170,14 +251,29 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
                 $form->validate();
 
                 $data = $form->getData();
-
-                $this->properties->setWidgetProperty('title.' . $this->locale, $data['title']);
+                $this->properties->setWidgetProperty('title.' . $this->locale, $data['title.' . $this->locale]);
                 $this->properties->setWidgetProperty('apikey', $data['apikey']);
                 $this->properties->setWidgetProperty('listid', $data['listid']);
+                $this->properties->setWidgetProperty('finish.node', $data['finishNode']);
 
                 $this->setTemplate($data[self::PROPERTY_TEMPLATE]);
 
+                unset($data['title.' . $this->locale]);
+                unset($data['apikey']);
+                unset($data['listid']);
+                unset($data[self::PROPERTY_TEMPLATE]);
+                unset($data['EMAIL']);
+
+                foreach ($data as $key => $var) {
+                    $value = false;
+                    if (!empty($var)) {
+                        $value = true;
+                    }
+                    $mailChimp->lists->mergeVarUpdate($listId, $key, array('public' => $value));
+                }
+
                 return true;
+
             } catch (ValidationException $exception) {
                 $this->setValidationException($exception, $form);
             }
@@ -198,6 +294,14 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
             'container' => 'label.style.container',
             'title' => 'label.style.title',
         );
+    }
+
+
+    protected function getListVariables($mailChimp, $listId) {
+        $list_vars = $mailChimp->lists->mergeVars(array($listId));
+        $list_vars = $list_vars['data'][0]['merge_vars'];
+
+        return $list_vars;
     }
 
 }
