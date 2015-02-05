@@ -45,7 +45,11 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
         $translator = $this->getTranslator();
         $mailchimp = new Mailchimp($apiKey);
 
-        $fields = $this->getListVariables($mailchimp, $listId);
+        if (!$this->properties->getWidgetProperty('mailchimp')) {
+            $fields = $this->getListVariables($mailchimp, $listId);
+        } else {
+            $fields = unserialize($this->properties->getWidgetProperty('mailchimp'));
+        }
         $field_typeMapper = array(
             'email' => 'email',
             'text' => 'string',
@@ -187,13 +191,15 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
     public function propertiesAction(NodeModel $nodeModel) {
         $translator = $this->getTranslator();
 
-        if ($this->properties->getWidgetProperty('apikey') && $this->properties->getWidgetProperty('listid')) {
+        if ($this->properties->getWidgetProperty('apikey') && $this->properties->getWidgetProperty('listid') && !$this->properties->getWidgetProperty('mailchimp')) {
             $apiKey = $this->properties->getWidgetProperty('apikey');
             $listId = $this->properties->getWidgetProperty('listid');
             $mailChimp = new Mailchimp($apiKey);
 
             $list_vars = $mailChimp->lists->mergeVars(array($listId));
             $list_vars = $list_vars['data'][0]['merge_vars'];
+
+            $this->properties->setWidgetProperty('mailchimp', serialize($list_vars));
         }
 
         $data = $this->properties->getWidgetProperties();
@@ -222,6 +228,11 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
                     'description' => $translator->translate('label.node.finish.description'),
                     'options' => $this->getNodeList($nodeModel),
                 ));
+
+
+        if ($this->properties->getWidgetProperty('mailchimp')) {
+            $list_vars = unserialize($this->properties->getWidgetProperty('mailchimp'));
+        }
 
         foreach ($list_vars as $var) {
             $show = $var['show'];
@@ -263,15 +274,21 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
                 unset($data['listid']);
                 unset($data[self::PROPERTY_TEMPLATE]);
                 unset($data['finishNode']);
-                unset($data['EMAIL']);
+                unset($data['mailchimp']);
 
-                foreach ($data as $key => $var) {
-                    $value = false;
-                    if (!empty($var)) {
-                        $value = true;
+                $list_vars = unserialize($this->properties->getWidgetProperty('mailchimp'));
+
+                foreach ($list_vars as $index => $var) {
+                    foreach ($data as $key => $item) {
+                        if ($var['tag'] == $key && $var['tag'] !== 'EMAIL') {
+                            $var['show'] = ($item ? TRUE : FALSE);
+                            $list_vars[$index] = $var;
+                        }
                     }
-                    $mailChimp->lists->mergeVarUpdate($listId, $key, array('public' => $value));
+
                 }
+
+                $this->properties->setWidgetProperty('mailchimp', serialize($list_vars));
 
                 return true;
 
