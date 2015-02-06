@@ -6,8 +6,12 @@
     "label.key.api": "API key",
     "label.key.api.mailchimp.description": "API key of your MailChimp account",
     "label.id.list": "List ID",
+    "label.id.list.checkbox": "Localisation",
+    "label.id.list.description": "Use for all languages?",
     "label.id.list.mailchimp.description": "Id of the list to subscribe to",
     "success.mailchimp.subscribe": "Thank you, you are now subscribed to our mailinglist.",
     "warning.mailchimp.email.exists": "Your email address is already subscribed",
-    "widget.mailchimp.subscribe": "Mailchimp Subscribe"
+    "widget.mailchimp.subscribe": "Mailchimp Subscribe",
+    "widget.general": "General",
+    "title.mailchimp.fields": "Field"
 }

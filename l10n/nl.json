@@ -6,6 +6,8 @@
     "label.key.api": "API sleutel",
     "label.key.api.mailchimp.description": "API sleutel van je MailChimp account",
     "label.id.list": "List ID",
+    "label.id.list.checkbox": "Localisatie",
+    "label.id.list.description": "Gebruiken voor alle talen?",
     "label.id.list.mailchimp.description": "Id van de lijst waarop ingeschreven wordt",
     "label.mailchimp.description.field": "Veld tonen op pagina?",
     "success.mailchimp.subscribe": "Bedankt, je bent nu ingeschreven op onze mailinglist.",
