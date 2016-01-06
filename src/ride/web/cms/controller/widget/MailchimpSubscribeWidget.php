@@ -25,6 +25,12 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
     const ICON  = 'img/cms/widget/mailchimp.subscribe.png';
 
     /**
+     * Name of the finish node property
+     * @var string
+     */
+    const PROPERTY_FINISH_NODE = 'finish.node';
+
+    /**
      * Template resource for this widget
      * @var string
      */
@@ -152,7 +158,7 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
         }
 
         $this->setTemplateView($this->getTemplate(static::TEMPLATE_NAMESPACE . '/default'), array(
-            'title' => $this->properties->getWidgetProperty('title.' . $this->locale),
+            'title' => $this->properties->getLocalizedWidgetProperty($this->locale, 'title'),
             'form' => $form->getView(),
             'parameters' => $parameters
         ));
@@ -167,7 +173,7 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
 
         $preview = '';
 
-        $title = $this->properties->getWidgetProperty('title.' . $this->locale);
+        $title = $this->properties->getLocalizedWidgetProperty($this->locale, 'title');
         if ($title) {
             $preview .= '<strong>' . $translator->translate('label.title') .'</strong> ' . $title. '<br/>';
         }
@@ -177,9 +183,13 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
             $preview .= '<strong>' . $translator->translate('label.key.api') .'</strong> ' . $apiKey . '<br/>';
         }
 
-        $listId = $this->properties->getWidgetProperty('listid.' . $this->locale);
+        $listId = $this->properties->getLocalizedWidgetProperty($this->locale, 'listid');
         if ($listId) {
             $preview .= '<strong>' . $translator->translate('label.id.list') . '</strong> ' . $listId . '<br/>';
+        }
+
+        if (!$apiKey || !$listId) {
+            $preview = '<strong>' . $translator->translate('label.mailchimp.not.set') .  '</strong>';
         }
 
         return $preview;
@@ -192,38 +202,35 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
     public function propertiesAction(NodeModel $nodeModel) {
         $translator = $this->getTranslator();
 
-        if ($this->properties->getWidgetProperty('apikey') && $this->properties->getWidgetProperty('listid') && !$this->properties->getWidgetProperty('mailchimp')) {
+        if ($this->properties->getWidgetProperty('apikey') && $this->properties->getLocalizedWidgetProperty($this->locale, 'listid') && !$this->properties->getWidgetProperty('mailchimp')) {
             $apiKey = $this->properties->getWidgetProperty('apikey');
-            $listId = $this->properties->getWidgetProperty('listid.' . $this->locale);
+            $listId = $this->properties->getLocalizedWidgetProperty($this->locale, 'listid');
             $mailChimp = new Mailchimp($apiKey);
 
-            $list_vars = $mailChimp->lists->mergeVars(array($listId));
-            $list_vars = $list_vars['data'][0]['merge_vars'];
-
+            if ($listId) {
+                $list_vars = $mailChimp->lists->mergeVars(array($listId));
+                $list_vars = $list_vars['data'][0]['merge_vars'];
+            } else {
+                $list_vars = array();
+            }
             $this->properties->setWidgetProperty('mailchimp', serialize($list_vars));
         }
 
         $data = array(
-            'title' => $this->properties->getWidgetProperty('title.' . $this->locale ),
+            'title' => $this->properties->getLocalizedWidgetProperty($this->locale, 'title'),
             'apikey' => $this->properties->getWidgetProperty('apikey'),
-            'finishNode' => $this->properties->getWidgetProperty('finishNode'),
-            'localized' => $this->properties->getWidgetProperty('localized'),
-            self::PROPERTY_TEMPLATE => $this->getTemplate(static::TEMPLATE_NAMESPACE . '/default'),
+            'listid' => $this->properties->getLocalizedWidgetProperty($this->locale, 'listid'),
+            'finishNode' => $this->properties->getLocalizedWidgetProperty($this->locale, self::PROPERTY_FINISH_NODE),
+            static::PROPERTY_TEMPLATE => $this->getTemplate(static::TEMPLATE_NAMESPACE . '/default'),
         );
-        if ($this->properties->getWidgetProperty('listid')) {
-            $data['listid'] = $this->properties->getWidgetProperty('listid');
-        } else {
-            $data['listid'] = $this->properties->getWidgetProperty('listid.' . $this->locale);
-        }
-
 
         $form = $this->createFormBuilder($data);
         $form->addRow('title' , 'string', array(
            'label' => $translator->translate('label.title'),
         ));
         $form->addRow('apikey', 'string', array(
-           'label' => $translator->translate('label.key.api'),
-           'description' => $translator->translate('label.key.api.mailchimp.description'),
+            'label' => $translator->translate('label.key.api'),
+            'description' => $translator->translate('label.key.api.mailchimp.description'),
             'validators' => array(
                 'required' => array()
             )
@@ -235,9 +242,10 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
                 'required' => array()
             )
         ));
-        $form->addRow('localized', 'boolean', array(
-           'label' => $translator->translate('label.id.list.checkbox'),
-           'description' => $translator->translate('label.id.list.description'),
+        $form->addRow('finishNode', 'select', array(
+            'label' => $translator->translate('label.node.finish'),
+            'description' => $translator->translate('label.node.finish.description'),
+            'options' => $this->getNodeList($nodeModel),
         ));
         $form->addRow(self::PROPERTY_TEMPLATE, 'select', array(
             'label' => $translator->translate('label.template'),
@@ -247,10 +255,10 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
             ),
         ));
         $form->addRow('finishNode', 'select', array(
-                    'label' => $translator->translate('label.node.finish'),
-                    'description' => $translator->translate('label.node.finish.description'),
-                    'options' => $this->getNodeList($nodeModel),
-                ));
+            'label' => $translator->translate('label.node.finish'),
+            'description' => $translator->translate('label.node.finish.description'),
+            'options' => $this->getNodeList($nodeModel),
+        ));
 
 
         if ($this->properties->getWidgetProperty('mailchimp')) {
@@ -258,7 +266,7 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
         }
 
         foreach ($list_vars as $var) {
-            $show = $var['show'];
+            $show = $var['public'];
             $required = $var['req'];
             $attributes = null;
             if ($required) {
@@ -286,18 +294,14 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
                 $form->validate();
 
                 $data = $form->getData();
-                $this->properties->setWidgetProperty('title.' . $this->locale, $data['title']);
+
+                $this->properties->setLocalizedWidgetProperty($this->locale, 'title', $data['title']);
                 $this->properties->setWidgetProperty('apikey', $data['apikey']);
-                $this->properties->setWidgetProperty('localized', $data['localized']);
-                if ($data['localized']) {
-                    $this->properties->setWidgetProperty('listid', $data['listid']);
-                } else {
-                    $this->properties->setWidgetProperty('listid.' . $this->locale, $data['listid']);
-                }
+                $this->properties->setWidgetProperty('listid', $data['listid']);
+                $this->properties->setLocalizedWidgetProperty($this->locale, self::PROPERTY_FINISH_NODE, $data['finishNode']);
 
-                $this->properties->setWidgetProperty('finish.node', $data['finishNode']);
 
-                $this->setTemplate($data[self::PROPERTY_TEMPLATE]);
+                $this->setTemplate($data[static::PROPERTY_TEMPLATE]);
 
                 unset($data['title']);
                 unset($data['apikey']);

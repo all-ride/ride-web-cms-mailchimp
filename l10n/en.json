@@ -3,15 +3,17 @@
     "error.mailchimp.subscribe.general": "Could not subscribe to the mailinglist: %error%",
     "error.mailchimp.subscribe.unknown": "Could not subscribe to the mailinglist: an unknown error occured.",
     "label.email.your": "Your email address",
-    "label.key.api": "API key",
-    "label.key.api.mailchimp.description": "API key of your MailChimp account",
     "label.id.list": "List ID",
     "label.id.list.checkbox": "Localisation",
     "label.id.list.description": "Use for all languages?",
     "label.id.list.mailchimp.description": "Id of the list to subscribe to",
+    "label.key.api": "API key",
+    "label.key.api.mailchimp.description": "API key of your MailChimp account",
+    "label.mailchimp.description.field": "Field visible in frondend.",
+    "label.mailchimp.not.set": "Mailchimp is not set yet!",
     "success.mailchimp.subscribe": "Thank you, you are now subscribed to our mailinglist.",
+    "title.mailchimp.fields": "Mailchimp Fields",
     "warning.mailchimp.email.exists": "Your email address is already subscribed",
-    "widget.mailchimp.subscribe": "Mailchimp Subscribe",
     "widget.general": "General",
-    "title.mailchimp.fields": "Field"
+    "widget.mailchimp.subscribe": "Mailchimp Subscribe"
 }
