@@ -200,13 +200,12 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
      * @return null
      */
     public function propertiesAction(NodeModel $nodeModel) {
-        $translator = $this->getTranslator();
 
+        $translator = $this->getTranslator();
         if ($this->properties->getWidgetProperty('apikey') && $this->properties->getLocalizedWidgetProperty($this->locale, 'listid') && !$this->properties->getWidgetProperty('mailchimp')) {
             $apiKey = $this->properties->getWidgetProperty('apikey');
             $listId = $this->properties->getLocalizedWidgetProperty($this->locale, 'listid');
             $mailChimp = new Mailchimp($apiKey);
-
             if ($listId) {
                 $list_vars = $mailChimp->lists->mergeVars(array($listId));
                 $list_vars = $list_vars['data'][0]['merge_vars'];
@@ -215,7 +214,6 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
             }
             $this->properties->setWidgetProperty('mailchimp', serialize($list_vars));
         }
-
         $data = array(
             'title' => $this->properties->getLocalizedWidgetProperty($this->locale, 'title'),
             'apikey' => $this->properties->getWidgetProperty('apikey'),
@@ -223,10 +221,9 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
             'finishNode' => $this->properties->getLocalizedWidgetProperty($this->locale, self::PROPERTY_FINISH_NODE),
             static::PROPERTY_TEMPLATE => $this->getTemplate(static::TEMPLATE_NAMESPACE . '/default'),
         );
-
         $form = $this->createFormBuilder($data);
-        $form->addRow('title' , 'string', array(
-           'label' => $translator->translate('label.title'),
+        $form->addRow('title', 'string', array(
+            'label' => $translator->translate('label.title'),
         ));
         $form->addRow('apikey', 'string', array(
             'label' => $translator->translate('label.key.api'),
@@ -259,29 +256,25 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
             'description' => $translator->translate('label.node.finish.description'),
             'options' => $this->getNodeList($nodeModel),
         ));
-
-
         if ($this->properties->getWidgetProperty('mailchimp')) {
             $list_vars = unserialize($this->properties->getWidgetProperty('mailchimp'));
-        }
-
-        foreach ($list_vars as $var) {
-            $show = $var['public'];
-            $required = $var['req'];
-            $attributes = null;
-            if ($required) {
-                $attributes = array(
-                    'disabled' => true
-                );
+            foreach ($list_vars as $var) {
+                $show = $var['public'];
+                $required = $var['req'];
+                $attributes = null;
+                if ($required) {
+                    $attributes = array(
+                        'disabled' => true
+                    );
+                }
+                $form->addRow($var['tag'], 'boolean', array(
+                    'label' => $var['tag'] . (' (tag)'),
+                    'description' => $translator->translate('label.mailchimp.description.field'),
+                    'default' => $show,
+                    'attributes' => $attributes
+                ));
             }
-            $form->addRow($var['tag'], 'boolean', array(
-               'label' =>  $var['tag'].(' (tag)'),
-               'description' => $translator->translate('label.mailchimp.description.field'),
-               'default' => $show,
-               'attributes' => $attributes
-            ));
         }
-
         $form = $form->build();
 
         if ($form->isSubmitted()) {
