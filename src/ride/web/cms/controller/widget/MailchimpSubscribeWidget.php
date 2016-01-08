@@ -42,7 +42,7 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
      */
     public function indexAction() {
         $apiKey = $this->properties->getWidgetProperty('apikey');
-        $listId = $this->properties->getWidgetProperty('listid.' . $this->locale);
+        $listId = $this->properties->getLocalizedWidgetProperty($this->locale, 'listid');
 
         if (!$apiKey || !$listId) {
             return;
@@ -69,7 +69,7 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
             if ($field['show']) {
                 if ($field['field_type'] == 'text' || $field['field_type'] == 'email') {
                     $attr = array(
-                        'label' => $translator->translate('label.mailchimp.' . strtolower($field['name'])),
+                        'label' => $translator->translate('label.mailchimp.' . str_replace(' ', '_',strtolower($field['name']))),
                     );
                     if (isset($parameters[$field['tag']])) {
 
