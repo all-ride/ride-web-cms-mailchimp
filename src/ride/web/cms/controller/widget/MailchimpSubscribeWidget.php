@@ -66,7 +66,7 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
         $form = $this->createFormBuilder($parameters);
 
         foreach ($fields as $field) {
-            if ($field['show']) {
+            if ($field['public']) {
                 if ($field['field_type'] == 'text' || $field['field_type'] == 'email') {
                     $attr = array(
                         'label' => $translator->translate('label.mailchimp.' . str_replace(' ', '_',strtolower($field['name']))),
@@ -205,14 +205,16 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
         if ($this->properties->getWidgetProperty('apikey') && $this->properties->getLocalizedWidgetProperty($this->locale, 'listid') && !$this->properties->getWidgetProperty('mailchimp')) {
             $apiKey = $this->properties->getWidgetProperty('apikey');
             $listId = $this->properties->getLocalizedWidgetProperty($this->locale, 'listid');
-            $mailChimp = new Mailchimp($apiKey);
-            if ($listId) {
-                $list_vars = $mailChimp->lists->mergeVars(array($listId));
-                $list_vars = $list_vars['data'][0]['merge_vars'];
-            } else {
-                $list_vars = array();
+            if (!$this->properties->getWidgetProperty('mailchimp')) {
+                $mailChimp = new Mailchimp($apiKey);
+                if ($listId) {
+                    $list_vars = $mailChimp->lists->mergeVars(array($listId));
+                    $list_vars = $list_vars['data'][0]['merge_vars'];
+                } else {
+                    $list_vars = array();
+                }
+                $this->properties->setWidgetProperty('mailchimp', serialize($list_vars));
             }
-            $this->properties->setWidgetProperty('mailchimp', serialize($list_vars));
         }
         $data = array(
             'title' => $this->properties->getLocalizedWidgetProperty($this->locale, 'title'),
@@ -275,6 +277,7 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
                 ));
             }
         }
+
         $form = $form->build();
 
         if ($form->isSubmitted()) {
@@ -288,13 +291,13 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
 
                 $data = $form->getData();
 
+
                 $this->properties->setLocalizedWidgetProperty($this->locale, 'title', $data['title']);
                 $this->properties->setWidgetProperty('apikey', $data['apikey']);
                 $this->properties->setWidgetProperty('listid', $data['listid']);
                 $this->properties->setLocalizedWidgetProperty($this->locale, self::PROPERTY_FINISH_NODE, $data['finishNode']);
-
-
                 $this->setTemplate($data[static::PROPERTY_TEMPLATE]);
+
 
                 unset($data['title']);
                 unset($data['apikey']);
@@ -302,22 +305,22 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
                 unset($data['localized']);
                 unset($data[self::PROPERTY_TEMPLATE]);
                 unset($data['finishNode']);
-                unset($data['mailchimp']);
 
-                $list_vars = unserialize($this->properties->getWidgetProperty('mailchimp'));
+                if ($this->properties->getWidgetProperty('mailchimp')) {
+                    $list_vars = unserialize($this->properties->getWidgetProperty('mailchimp'));
 
-                foreach ($list_vars as $index => $var) {
-                    foreach ($data as $key => $item) {
-                        if ($var['tag'] == $key && $var['tag'] !== 'EMAIL') {
-                            $var['show'] = ($item ? TRUE : FALSE);
-                            $list_vars[$index] = $var;
+                    foreach ($list_vars as $index => $var) {
+                        foreach ($data as $key => $item) {
+                            if ($var['tag'] == $key && $var['tag'] !== 'EMAIL') {
+                                $var['public'] = ($item ? TRUE : FALSE);
+                                $list_vars[$index] = $var;
+                            }
                         }
+
                     }
 
+                    $this->properties->setWidgetProperty('mailchimp', serialize($list_vars));
                 }
-
-                $this->properties->setWidgetProperty('mailchimp', serialize($list_vars));
-
                 return true;
 
             } catch (ValidationException $exception) {
