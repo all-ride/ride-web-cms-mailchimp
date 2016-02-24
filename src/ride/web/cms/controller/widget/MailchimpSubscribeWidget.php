@@ -2,10 +2,10 @@
 
 namespace ride\web\cms\controller\widget;
 
+use DrewM\MailChimp\MailChimp;
 use ride\library\cms\node\NodeModel;
 use ride\library\validation\exception\ValidationException;
 
-use \Mailchimp;
 
 /**
  * Newsletter form for Seforis homepage
@@ -31,6 +31,12 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
     const PROPERTY_FINISH_NODE = 'finish.node';
 
     /**
+     * Name of the finish node property
+     * @var string
+     */
+    const PROPERTY_ERROR_NODE = 'error.node';
+
+    /**
      * Template resource for this widget
      * @var string
      */
@@ -50,7 +56,7 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
 
         $parameters = $this->request->getQueryParameters();
         $translator = $this->getTranslator();
-        $mailchimp = new Mailchimp($apiKey);
+        $mailchimp = new MailChimp($apiKey);
 
         if (!$this->properties->getWidgetProperty('mailchimp')) {
             $fields = $this->getListVariables($mailchimp, $listId);
@@ -96,8 +102,8 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
                 $form->validate();
 
                 $data = $form->getData();
-                $email = array('email' => $data['EMAIL']);
-                unset($data['email']);
+                $email = $data['EMAIL'];
+                unset($data['EMAIL']);
 
                 $variables = null;
                 if($data) {
@@ -109,48 +115,54 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
                         $variables[$key] = $parameter;
                     }
 
-                    $variables = array('merge_vars' => $variables);
+                }
+
+                if (!$variables) {
+                    $response = $mailchimp->post("lists/$listId/members", [
+                        'email_address' => $email,
+                        'status' => 'subscribed',
+                    ]);
+                } else {
+                    $response = $mailchimp->post("lists/$listId/members", [
+                        'email_address' => $email,
+                        'merge_fields' => $variables,
+                        'status' => 'subscribed',
+                    ]);
+
                 }
 
 
-                $response = $mailchimp->lists->memberInfo($listId, array($email));
+                if ($response['status'] = 'subscribed') {
+                    $finish = $this->properties->getWidgetProperty('finish.node');
+                    if ($finish) {
+                        $url = $this->getUrl('cms.front.' . $this->properties->getNode()->getRootNodeId() . '.' . $finish . '.' . $this->locale);
+                    } else {
 
-                if (isset($response['errors']['0']['code'])) {
-                    $code = $response['errors']['0']['code'];
-                    switch ($code) {
-                        case 230:
-                            $this->addError('warning.mailchimp.email.exists');
+                        $filterUrl = str_replace('?' . $this->request->getQueryParametersAsString(), '', $this->request->getUrl());
+                        $url = $filterUrl;
 
-                            break;
-                        case 231:
-                        case 232:
-                        case 233:
-                            $mailchimp->lists->subscribe($listId, $email, $variables['merge_vars'], 'html', false, true, false, $code == 232);
-
-                            $finish = $this->properties->getWidgetProperty('finish.node');
-                            if ($finish) {
-                                $url = $this->getUrl('cms.front.' . $this->properties->getNode()->getRootNodeId() . '.' . $finish . '.' . $this->locale);
-                            } else {
-
-                                $filterUrl = str_replace('?' . $this->request->getQueryParametersAsString(), '', $this->request->getUrl());
-                                $url = $filterUrl;
-
-                                $this->addSuccess('success.mailchimp.subscribe');
-                                $parameters = null;
-                            }
-
-                            $this->response->setRedirect($url);
-
-                            return;
-
-                            break;
-                        default:
-                            $this->addWarning('error.mailchimp.subscribe.general', array('error' => $response['errors']['0']['message']));
-
-                            break;
+                        $this->addSuccess('success.mailchimp.subscribe');
+                        $parameters = null;
                     }
+
+                    $this->response->setRedirect($url);
+
+                    return;
+                } elseif ($response['status'] == 400) {
+                    $errorMessage = $response['title'];
+                    $error = $this->getErrorMessage($errorMessage);
+                    $this->addError($error, array('error' => $errorMessage));
+
+                    $error = $this->properties->getWidgetProperty('error.node');
+                if ($error) {
+                    $url = $this->getUrl('cms.front.' . $this->properties->getNode()->getRootNodeId() . '.' . $error . '.' . $this->locale);
                 } else {
-                    $this->addError('error.mailchimp.subscribe.unknown');
+
+                    $filterUrl = str_replace('?' . $this->request->getQueryParametersAsString(), '', $this->request->getUrl());
+                    $url = $filterUrl;
+                }
+                    $this->response->setRedirect($url);
+                    return;
                 }
             } catch (ValidationException $exception) {
                 $this->setValidationException($exception, $form);
@@ -220,7 +232,8 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
             'title' => $this->properties->getLocalizedWidgetProperty($this->locale, 'title'),
             'apikey' => $this->properties->getWidgetProperty('apikey'),
             'listid' => $this->properties->getLocalizedWidgetProperty($this->locale, 'listid'),
-            'finishNode' => $this->properties->getLocalizedWidgetProperty($this->locale, self::PROPERTY_FINISH_NODE),
+            'finishNode' => $this->properties->getWidgetProperty(self::PROPERTY_FINISH_NODE),
+            'errorNode' => $this->properties->getWidgetProperty(self::PROPERTY_ERROR_NODE),
             static::PROPERTY_TEMPLATE => $this->getTemplate(static::TEMPLATE_NAMESPACE . '/default'),
         );
         $form = $this->createFormBuilder($data);
@@ -246,17 +259,17 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
             'description' => $translator->translate('label.node.finish.description'),
             'options' => $this->getNodeList($nodeModel),
         ));
+        $form->addRow('errorNode', 'select', array(
+            'label' => $translator->translate('label.node.error'),
+            'description' => $translator->translate('label.node.error.description'),
+            'options' => $this->getNodeList($nodeModel),
+        ));
         $form->addRow(self::PROPERTY_TEMPLATE, 'select', array(
             'label' => $translator->translate('label.template'),
             'options' => $this->getAvailableTemplates(static::TEMPLATE_NAMESPACE),
             'validators' => array(
                 'required' => array(),
             ),
-        ));
-        $form->addRow('finishNode', 'select', array(
-            'label' => $translator->translate('label.node.finish'),
-            'description' => $translator->translate('label.node.finish.description'),
-            'options' => $this->getNodeList($nodeModel),
         ));
         if ($this->properties->getWidgetProperty('mailchimp')) {
             $list_vars = unserialize($this->properties->getWidgetProperty('mailchimp'));
@@ -295,7 +308,8 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
                 $this->properties->setLocalizedWidgetProperty($this->locale, 'title', $data['title']);
                 $this->properties->setWidgetProperty('apikey', $data['apikey']);
                 $this->properties->setWidgetProperty('listid', $data['listid']);
-                $this->properties->setLocalizedWidgetProperty($this->locale, self::PROPERTY_FINISH_NODE, $data['finishNode']);
+                $this->properties->setWidgetProperty(self::PROPERTY_FINISH_NODE, $data['finishNode']);
+                $this->properties->setWidgetProperty(self::PROPERTY_ERROR_NODE, $data['errorNode']);
                 $this->setTemplate($data[static::PROPERTY_TEMPLATE]);
 
 
@@ -305,6 +319,8 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
                 unset($data['localized']);
                 unset($data[self::PROPERTY_TEMPLATE]);
                 unset($data['finishNode']);
+                unset($data['errorNode']);
+
 
                 if ($this->properties->getWidgetProperty('mailchimp')) {
                     $list_vars = unserialize($this->properties->getWidgetProperty('mailchimp'));
@@ -351,6 +367,18 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
         $list_vars = $list_vars['data'][0]['merge_vars'];
 
         return $list_vars;
+    }
+
+    protected function getErrorMessage($errorMessage) {
+        $errorList = array(
+            'Member Exists' => 'warning.mailchimp.email.exists'
+        );
+
+        if ($errorList[$errorMessage]) {
+            return $errorList[$errorMessage];
+        } else {
+            return 'error.mailchimp.subscribe.general';
+        }
     }
 
 }
