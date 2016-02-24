@@ -21,7 +21,7 @@
         "ride/lib-validation": ">=0.1.0",
         "ride/lib-widget": ">=0.1.1",
         "ride/web-cms": ">=0.16.0",
-        "mailchimp/mailchimp": "*"
+        "drewm/mailchimp-api": "*"
     },
     "autoload": {
         "psr-0": {
