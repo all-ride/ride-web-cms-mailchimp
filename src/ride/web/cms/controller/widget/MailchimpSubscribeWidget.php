@@ -73,7 +73,7 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
 
         $form->addRow('EMAIL', 'email', array(
             'label' => $translator->translate('label.mailchimp.email'),
-            'validator' => array(
+            'validators' => array(
                 'required' => array()
             )
         ));
