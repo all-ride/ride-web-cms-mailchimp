@@ -70,7 +70,7 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
         );
 
         $form = $this->createFormBuilder($parameters);
-
+        $form->setAction('mailchimp');
         $form->addRow('EMAIL', 'email', array(
             'label' => $translator->translate('label.mailchimp.email'),
             'validators' => array(
