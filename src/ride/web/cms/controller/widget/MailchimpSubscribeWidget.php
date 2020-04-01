@@ -369,8 +369,17 @@ class MailchimpSubscribeWidget extends AbstractWidget implements StyleWidget {
 
 
     protected function getListVariables($mailChimp, $listId) {
-        $list_vars = $mailChimp->get("/lists/$listId/merge-fields");
-        $list_vars = $list_vars['merge_fields'];
+        $cache = $this->dependencyInjector->get('ride\\library\\cache\\pool\\CachePool', 'file');
+        $cacheItem = $cache->get('mailchimp.mergeFields');
+        if ($cacheItem->isValid()) {
+            $list_vars = $cacheItem->getValue();
+        } else {
+            $list_vars = $mailChimp->get("/lists/$listId/merge-fields");
+            $list_vars = $list_vars['merge_fields'];
+
+            $cacheItem->setValue($list_vars);
+            $cache->set($cacheItem);
+        }
 
         return $list_vars;
     }

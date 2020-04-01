@@ -9,6 +9,7 @@
     "label.key.api.mailchimp.description": "API sleutel van je MailChimp account",
     "label.mailchimp.description.field": "Veld zichtbaar in frontend.",
     "label.mailchimp.email_address": "Email",
+    "label.mailchimp.email": "E-mailadres",
     "label.mailchimp.first_name": "Voornaam",
     "label.mailchimp.last_name": "Familienaam",
     "label.mailchimp.not.set": "Mailchimp is nog niet ingesteld!",
